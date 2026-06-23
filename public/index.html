@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>会员积分系统 - 会员管理</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; background: #f5f7fa; color: #303133; }
+    .header { background: linear-gradient(135deg, #67c23a, #409eff); color: #fff; padding: 20px 40px; box-shadow: 0 2px 12px rgba(0,0,0,0.1); }
+    .header h1 { font-size: 24px; margin-bottom: 12px; }
+    .nav { display: flex; gap: 8px; }
+    .nav a { color: #fff; text-decoration: none; padding: 8px 20px; border-radius: 6px; font-size: 14px; opacity: 0.85; transition: all 0.2s; }
+    .nav a.active, .nav a:hover { background: rgba(255,255,255,0.25); opacity: 1; }
+    .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
+    .card { background: #fff; border-radius: 8px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-bottom: 24px; }
+    .card-title { font-size: 18px; font-weight: 600; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid #ebeef5; }
+    .form-row { display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+    .form-group { flex: 1; min-width: 200px; }
+    .form-group label { display: block; font-size: 14px; color: #606266; margin-bottom: 6px; }
+    .form-group input { width: 100%; padding: 10px 12px; border: 1px solid #dcdfe6; border-radius: 6px; font-size: 14px; transition: border-color 0.2s; }
+    .form-group input:focus { outline: none; border-color: #409eff; }
+    .btn { padding: 10px 20px; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; transition: all 0.2s; }
+    .btn-primary { background: #409eff; color: #fff; }
+    .btn-primary:hover { background: #66b1ff; }
+    .btn-success { background: #67c23a; color: #fff; }
+    .btn-success:hover { background: #85ce61; }
+    .btn-danger { background: #f56c6c; color: #fff; }
+    .btn-danger:hover { background: #f78989; }
+    .btn-warning { background: #e6a23c; color: #fff; }
+    .btn-warning:hover { background: #ebb563; }
+    .btn-small { padding: 6px 12px; font-size: 12px; }
+    .table { width: 100%; border-collapse: collapse; }
+    .table th, .table td { padding: 12px; text-align: left; border-bottom: 1px solid #ebeef5; font-size: 14px; }
+    .table th { background: #fafafa; font-weight: 600; color: #606266; }
+    .table tr:hover { background: #fafafa; }
+    .badge { display: inline-block; padding: 4px 10px; border-radius: 10px; font-size: 12px; background: #ecf5ff; color: #409eff; }
+    .badge-success { background: #f0f9eb; color: #67c23a; }
+    .empty { text-align: center; padding: 40px; color: #909399; font-size: 14px; }
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+    .modal-overlay.active { display: flex; }
+    .modal { background: #fff; border-radius: 8px; width: 480px; max-width: 90%; overflow: hidden; }
+    .modal-header { padding: 16px 20px; border-bottom: 1px solid #ebeef5; font-size: 16px; font-weight: 600; }
+    .modal-body { padding: 20px; }
+    .modal-footer { padding: 12px 20px; border-top: 1px solid #ebeef5; text-align: right; display: flex; gap: 10px; justify-content: flex-end; }
+    .toast { position: fixed; top: 20px; right: 20px; padding: 12px 20px; border-radius: 6px; color: #fff; font-size: 14px; z-index: 2000; animation: slideIn 0.3s; }
+    .toast-success { background: #67c23a; }
+    .toast-error { background: #f56c6c; }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    .search-bar { display: flex; gap: 12px; margin-bottom: 20px; }
+    .search-bar input { flex: 1; }
+    .actions { display: flex; gap: 8px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🍎 社区水果店会员积分系统</h1>
+    <div class="nav">
+      <a href="/" class="active">会员管理</a>
+      <a href="/transactions.html">消费记录</a>
+      <a href="/redemptions.html">积分兑换</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="card">
+      <div class="card-title">新增会员</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>姓名</label>
+          <input type="text" id="newName" placeholder="请输入会员姓名">
+        </div>
+        <div class="form-group">
+          <label>手机号</label>
+          <input type="text" id="newPhone" placeholder="请输入11位手机号">
+        </div>
+        <div class="form-group" style="flex: 0; display: flex; align-items: flex-end;">
+          <button class="btn btn-success" onclick="addMember()">添加会员</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">会员列表</div>
+      <div class="search-bar">
+        <input type="text" id="searchKeyword" placeholder="搜索姓名或手机号" onkeyup="if(event.key==='Enter')searchMembers()">
+        <button class="btn btn-primary" onclick="searchMembers()">搜索</button>
+        <button class="btn" onclick="resetSearch()">重置</button>
+      </div>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>姓名</th>
+            <th>手机号</th>
+            <th>累计积分</th>
+            <th>注册时间</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="memberTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="editModal">
+    <div class="modal">
+      <div class="modal-header">编辑会员信息</div>
+      <div class="modal-body">
+        <input type="hidden" id="editId">
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label>姓名</label>
+          <input type="text" id="editName">
+        </div>
+        <div class="form-group">
+          <label>手机号</label>
+          <input type="text" id="editPhone">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('editModal')">取消</button>
+        <button class="btn btn-primary" onclick="saveEdit()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let allMembers = [];
+
+    async function loadMembers() {
+      const res = await fetch('/api/members');
+      allMembers = await res.json();
+      renderMembers(allMembers);
+    }
+
+    async function searchMembers() {
+      const keyword = document.getElementById('searchKeyword').value.trim();
+      const url = keyword ? `/api/members?keyword=${encodeURIComponent(keyword)}` : '/api/members';
+      const res = await fetch(url);
+      allMembers = await res.json();
+      renderMembers(allMembers);
+    }
+
+    function resetSearch() {
+      document.getElementById('searchKeyword').value = '';
+      loadMembers();
+    }
+
+    function renderMembers(members) {
+      const tbody = document.getElementById('memberTable');
+      if (members.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty">暂无会员数据</td></tr>';
+        return;
+      }
+      tbody.innerHTML = members.map(m => `
+        <tr>
+          <td>${m.id}</td>
+          <td>${m.name}</td>
+          <td>${m.phone}</td>
+          <td><span class="badge badge-success">${m.points} 分</span></td>
+          <td>${new Date(m.created_at).toLocaleString('zh-CN')}</td>
+          <td>
+            <div class="actions">
+              <button class="btn btn-small btn-warning" onclick='openEditModal(${JSON.stringify(m)})'>编辑</button>
+              <button class="btn btn-small btn-danger" onclick="deleteMember(${m.id}, '${m.name}')">删除</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function addMember() {
+      const name = document.getElementById('newName').value.trim();
+      const phone = document.getElementById('newPhone').value.trim();
+      if (!name || !phone) {
+        showToast('请填写姓名和手机号', 'error');
+        return;
+      }
+      if (!/^1\d{10}$/.test(phone)) {
+        showToast('请输入正确的11位手机号', 'error');
+        return;
+      }
+      const res = await fetch('/api/members', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, phone })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast('会员添加成功', 'success');
+        document.getElementById('newName').value = '';
+        document.getElementById('newPhone').value = '';
+        loadMembers();
+      } else {
+        showToast(data.error || '添加失败', 'error');
+      }
+    }
+
+    function openEditModal(member) {
+      document.getElementById('editId').value = member.id;
+      document.getElementById('editName').value = member.name;
+      document.getElementById('editPhone').value = member.phone;
+      document.getElementById('editModal').classList.add('active');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('active');
+    }
+
+    async function saveEdit() {
+      const id = document.getElementById('editId').value;
+      const name = document.getElementById('editName').value.trim();
+      const phone = document.getElementById('editPhone').value.trim();
+      if (!name || !phone) {
+        showToast('请填写姓名和手机号', 'error');
+        return;
+      }
+      const res = await fetch(`/api/members/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, phone })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast('修改成功', 'success');
+        closeModal('editModal');
+        loadMembers();
+      } else {
+        showToast(data.error || '修改失败', 'error');
+      }
+    }
+
+    async function deleteMember(id, name) {
+      if (!confirm(`确定要删除会员"${name}"吗？相关消费和兑换记录也会被删除。`)) return;
+      const res = await fetch(`/api/members/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (res.ok) {
+        showToast('删除成功', 'success');
+        loadMembers();
+      } else {
+        showToast(data.error || '删除失败', 'error');
+      }
+    }
+
+    function showToast(msg, type = 'success') {
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.textContent = msg;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 2500);
+    }
+
+    loadMembers();
+  </script>
+</body>
+</html>

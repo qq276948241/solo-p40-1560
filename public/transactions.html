@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>会员积分系统 - 消费记录</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; background: #f5f7fa; color: #303133; }
+    .header { background: linear-gradient(135deg, #67c23a, #409eff); color: #fff; padding: 20px 40px; box-shadow: 0 2px 12px rgba(0,0,0,0.1); }
+    .header h1 { font-size: 24px; margin-bottom: 12px; }
+    .nav { display: flex; gap: 8px; }
+    .nav a { color: #fff; text-decoration: none; padding: 8px 20px; border-radius: 6px; font-size: 14px; opacity: 0.85; transition: all 0.2s; }
+    .nav a.active, .nav a:hover { background: rgba(255,255,255,0.25); opacity: 1; }
+    .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
+    .card { background: #fff; border-radius: 8px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-bottom: 24px; }
+    .card-title { font-size: 18px; font-weight: 600; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid #ebeef5; }
+    .form-row { display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; align-items: flex-end; }
+    .form-group { flex: 1; min-width: 180px; }
+    .form-group label { display: block; font-size: 14px; color: #606266; margin-bottom: 6px; }
+    .form-group input, .form-group select { width: 100%; padding: 10px 12px; border: 1px solid #dcdfe6; border-radius: 6px; font-size: 14px; transition: border-color 0.2s; }
+    .form-group input:focus, .form-group select:focus { outline: none; border-color: #409eff; }
+    .btn { padding: 10px 20px; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; transition: all 0.2s; }
+    .btn-primary { background: #409eff; color: #fff; }
+    .btn-primary:hover { background: #66b1ff; }
+    .btn-success { background: #67c23a; color: #fff; }
+    .btn-success:hover { background: #85ce61; }
+    .table { width: 100%; border-collapse: collapse; }
+    .table th, .table td { padding: 12px; text-align: left; border-bottom: 1px solid #ebeef5; font-size: 14px; }
+    .table th { background: #fafafa; font-weight: 600; color: #606266; }
+    .table tr:hover { background: #fafafa; }
+    .badge { display: inline-block; padding: 4px 10px; border-radius: 10px; font-size: 12px; background: #ecf5ff; color: #409eff; }
+    .badge-success { background: #f0f9eb; color: #67c23a; }
+    .badge-warning { background: #fdf6ec; color: #e6a23c; }
+    .empty { text-align: center; padding: 40px; color: #909399; font-size: 14px; }
+    .toast { position: fixed; top: 20px; right: 20px; padding: 12px 20px; border-radius: 6px; color: #fff; font-size: 14px; z-index: 2000; animation: slideIn 0.3s; }
+    .toast-success { background: #67c23a; }
+    .toast-error { background: #f56c6c; }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    .stats-row { display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; }
+    .stat-item { flex: 1; min-width: 200px; background: linear-gradient(135deg, #f5f7fa, #e8edf3); padding: 16px 20px; border-radius: 8px; }
+    .stat-item .label { font-size: 13px; color: #909399; margin-bottom: 6px; }
+    .stat-item .value { font-size: 24px; font-weight: 600; color: #303133; }
+    .stat-item.primary .value { color: #409eff; }
+    .stat-item.success .value { color: #67c23a; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🍎 社区水果店会员积分系统</h1>
+    <div class="nav">
+      <a href="/">会员管理</a>
+      <a href="/transactions.html" class="active">消费记录</a>
+      <a href="/redemptions.html">积分兑换</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="card">
+      <div class="card-title">记录消费</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>选择会员</label>
+          <select id="txMemberId"></select>
+        </div>
+        <div class="form-group">
+          <label>消费金额（元）</label>
+          <input type="number" id="txAmount" placeholder="请输入消费金额" step="0.01" min="0">
+        </div>
+        <div class="form-group" style="flex: 0 0 auto;">
+          <button class="btn btn-success" onclick="addTransaction()">记录消费</button>
+        </div>
+      </div>
+      <p style="font-size: 13px; color: #909399;">* 每消费1元可获得1积分（按整数累计）</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">消费记录查询</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>会员</label>
+          <select id="filterMemberId">
+            <option value="">全部会员</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>开始日期</label>
+          <input type="date" id="startDate">
+        </div>
+        <div class="form-group">
+          <label>结束日期</label>
+          <input type="date" id="endDate">
+        </div>
+        <div class="form-group" style="flex: 0 0 auto;">
+          <button class="btn btn-primary" onclick="loadTransactions()">查询</button>
+        </div>
+        <div class="form-group" style="flex: 0 0 auto;">
+          <button class="btn" onclick="resetFilter()">重置</button>
+        </div>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-item primary">
+          <div class="label">消费笔数</div>
+          <div class="value" id="totalCount">0</div>
+        </div>
+        <div class="stat-item success">
+          <div class="label">消费总金额（元）</div>
+          <div class="value" id="totalAmount">0.00</div>
+        </div>
+        <div class="stat-item">
+          <div class="label">获得总积分</div>
+          <div class="value" id="totalPoints">0</div>
+        </div>
+      </div>
+
+      <table class="table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>会员姓名</th>
+            <th>手机号</th>
+            <th>消费金额</th>
+            <th>获得积分</th>
+            <th>消费时间</th>
+          </tr>
+        </thead>
+        <tbody id="txTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    let members = [];
+
+    async function loadMembers() {
+      const res = await fetch('/api/members');
+      members = await res.json();
+      const txSelect = document.getElementById('txMemberId');
+      const filterSelect = document.getElementById('filterMemberId');
+      const txOptions = members.map(m => `<option value="${m.id}">${m.name} (${m.phone}) - ${m.points}分</option>`).join('');
+      txSelect.innerHTML = '<option value="">请选择会员</option>' + txOptions;
+      filterSelect.innerHTML = '<option value="">全部会员</option>' + members.map(m => `<option value="${m.id}">${m.name} (${m.phone})</option>`).join('');
+    }
+
+    async function loadTransactions() {
+      const memberId = document.getElementById('filterMemberId').value;
+      const startDate = document.getElementById('startDate').value;
+      const endDate = document.getElementById('endDate').value;
+      const params = new URLSearchParams();
+      if (memberId) params.set('member_id', memberId);
+      if (startDate) params.set('start_date', startDate);
+      if (endDate) params.set('end_date', endDate);
+      const res = await fetch('/api/transactions' + (params.toString() ? '?' + params.toString() : ''));
+      const data = await res.json();
+      renderTransactions(data);
+    }
+
+    function resetFilter() {
+      document.getElementById('filterMemberId').value = '';
+      document.getElementById('startDate').value = '';
+      document.getElementById('endDate').value = '';
+      loadTransactions();
+    }
+
+    function renderTransactions(data) {
+      const tbody = document.getElementById('txTable');
+      if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty">暂无消费记录</td></tr>';
+      } else {
+        tbody.innerHTML = data.map(t => `
+          <tr>
+            <td>${t.id}</td>
+            <td>${t.member_name}</td>
+            <td>${t.member_phone}</td>
+            <td><span class="badge badge-warning">¥ ${Number(t.amount).toFixed(2)}</span></td>
+            <td><span class="badge badge-success">+${t.points_earned} 分</span></td>
+            <td>${new Date(t.created_at).toLocaleString('zh-CN')}</td>
+          </tr>
+        `).join('');
+      }
+      const totalCount = data.length;
+      const totalAmount = data.reduce((sum, t) => sum + Number(t.amount), 0);
+      const totalPoints = data.reduce((sum, t) => sum + t.points_earned, 0);
+      document.getElementById('totalCount').textContent = totalCount;
+      document.getElementById('totalAmount').textContent = totalAmount.toFixed(2);
+      document.getElementById('totalPoints').textContent = totalPoints;
+    }
+
+    async function addTransaction() {
+      const memberId = document.getElementById('txMemberId').value;
+      const amount = parseFloat(document.getElementById('txAmount').value);
+      if (!memberId) {
+        showToast('请选择会员', 'error');
+        return;
+      }
+      if (!amount || amount <= 0) {
+        showToast('请输入有效的消费金额', 'error');
+        return;
+      }
+      const member = members.find(m => m.id == memberId);
+      const points = Math.floor(amount);
+      if (!confirm(`确认记录"${member.name}"消费 ¥${amount.toFixed(2)}，将获得 ${points} 积分？`)) {
+        return;
+      }
+      const res = await fetch('/api/transactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ member_id: memberId, amount })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast(`记录成功！获得 ${data.points_earned} 积分，当前积分 ${data.current_points}`, 'success');
+        document.getElementById('txAmount').value = '';
+        loadMembers();
+        loadTransactions();
+      } else {
+        showToast(data.error || '记录失败', 'error');
+      }
+    }
+
+    function showToast(msg, type = 'success') {
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.textContent = msg;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 2500);
+    }
+
+    loadMembers();
+    loadTransactions();
+  </script>
+</body>
+</html>

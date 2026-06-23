@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>会员积分系统 - 积分兑换</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; background: #f5f7fa; color: #303133; }
+    .header { background: linear-gradient(135deg, #67c23a, #409eff); color: #fff; padding: 20px 40px; box-shadow: 0 2px 12px rgba(0,0,0,0.1); }
+    .header h1 { font-size: 24px; margin-bottom: 12px; }
+    .nav { display: flex; gap: 8px; }
+    .nav a { color: #fff; text-decoration: none; padding: 8px 20px; border-radius: 6px; font-size: 14px; opacity: 0.85; transition: all 0.2s; }
+    .nav a.active, .nav a:hover { background: rgba(255,255,255,0.25); opacity: 1; }
+    .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
+    .card { background: #fff; border-radius: 8px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-bottom: 24px; }
+    .card-title { font-size: 18px; font-weight: 600; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid #ebeef5; }
+    .form-row { display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; align-items: flex-end; }
+    .form-group { flex: 1; min-width: 200px; }
+    .form-group label { display: block; font-size: 14px; color: #606266; margin-bottom: 6px; }
+    .form-group input, .form-group select { width: 100%; padding: 10px 12px; border: 1px solid #dcdfe6; border-radius: 6px; font-size: 14px; transition: border-color 0.2s; }
+    .form-group input:focus, .form-group select:focus { outline: none; border-color: #409eff; }
+    .btn { padding: 10px 20px; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; transition: all 0.2s; }
+    .btn-primary { background: #409eff; color: #fff; }
+    .btn-primary:hover { background: #66b1ff; }
+    .btn-primary:disabled { background: #a0cfff; cursor: not-allowed; }
+    .btn-success { background: #67c23a; color: #fff; }
+    .btn-success:hover { background: #85ce61; }
+    .btn-warning { background: #e6a23c; color: #fff; }
+    .btn-warning:hover { background: #ebb563; }
+    .table { width: 100%; border-collapse: collapse; }
+    .table th, .table td { padding: 12px; text-align: left; border-bottom: 1px solid #ebeef5; font-size: 14px; }
+    .table th { background: #fafafa; font-weight: 600; color: #606266; }
+    .table tr:hover { background: #fafafa; }
+    .badge { display: inline-block; padding: 4px 10px; border-radius: 10px; font-size: 12px; background: #ecf5ff; color: #409eff; }
+    .badge-success { background: #f0f9eb; color: #67c23a; }
+    .badge-danger { background: #fef0f0; color: #f56c6c; }
+    .badge-warning { background: #fdf6ec; color: #e6a23c; }
+    .empty { text-align: center; padding: 40px; color: #909399; font-size: 14px; }
+    .toast { position: fixed; top: 20px; right: 20px; padding: 12px 20px; border-radius: 6px; color: #fff; font-size: 14px; z-index: 2000; animation: slideIn 0.3s; }
+    .toast-success { background: #67c23a; }
+    .toast-error { background: #f56c6c; }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    .gift-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
+    .gift-card { border: 1px solid #ebeef5; border-radius: 8px; padding: 20px; transition: all 0.2s; position: relative; }
+    .gift-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); border-color: #409eff; }
+    .gift-card.disabled { opacity: 0.5; cursor: not-allowed; }
+    .gift-icon { font-size: 48px; text-align: center; margin-bottom: 12px; }
+    .gift-name { font-size: 16px; font-weight: 600; text-align: center; margin-bottom: 8px; }
+    .gift-desc { font-size: 13px; color: #909399; text-align: center; margin-bottom: 12px; min-height: 36px; }
+    .gift-points { text-align: center; margin-bottom: 12px; }
+    .gift-stock { text-align: center; font-size: 12px; color: #909399; margin-bottom: 12px; }
+    .gift-btn { width: 100%; }
+    .member-select-row { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; padding: 16px; background: #fafafa; border-radius: 8px; }
+    .member-info { flex: 1; min-width: 200px; }
+    .member-info .label { font-size: 13px; color: #909399; }
+    .member-info .value { font-size: 16px; font-weight: 600; margin-top: 4px; }
+    .member-info .points { color: #67c23a; }
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+    .modal-overlay.active { display: flex; }
+    .modal { background: #fff; border-radius: 8px; width: 480px; max-width: 90%; overflow: hidden; }
+    .modal-header { padding: 16px 20px; border-bottom: 1px solid #ebeef5; font-size: 16px; font-weight: 600; }
+    .modal-body { padding: 20px; }
+    .modal-footer { padding: 12px 20px; border-top: 1px solid #ebeef5; text-align: right; display: flex; gap: 10px; justify-content: flex-end; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🍎 社区水果店会员积分系统</h1>
+    <div class="nav">
+      <a href="/">会员管理</a>
+      <a href="/transactions.html">消费记录</a>
+      <a href="/redemptions.html" class="active">积分兑换</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="card">
+      <div class="card-title">选择兑换会员</div>
+      <div class="member-select-row">
+        <div class="form-group" style="flex: 2; margin: 0;">
+          <label>会员</label>
+          <select id="redeemMemberId" onchange="onMemberChange()">
+            <option value="">请选择会员</option>
+          </select>
+        </div>
+        <div class="member-info">
+          <div class="label">当前积分</div>
+          <div class="value points" id="currentPoints">-</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">礼品列表</div>
+      <div class="gift-grid" id="giftGrid"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        兑换记录
+        <button class="btn btn-warning" style="float: right; padding: 6px 14px; font-size: 12px;" onclick="loadRedemptions()">刷新</button>
+      </div>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>会员姓名</th>
+            <th>手机号</th>
+            <th>兑换礼品</th>
+            <th>扣除积分</th>
+            <th>兑换时间</th>
+          </tr>
+        </thead>
+        <tbody id="redeemTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="addGiftModal">
+    <div class="modal">
+      <div class="modal-header">新增礼品</div>
+      <div class="modal-body">
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label>礼品名称</label>
+          <input type="text" id="giftName">
+        </div>
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label>所需积分</label>
+          <input type="number" id="giftPoints" min="0">
+        </div>
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label>库存数量</label>
+          <input type="number" id="giftStock" min="0">
+        </div>
+        <div class="form-group">
+          <label>描述</label>
+          <input type="text" id="giftDesc">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('addGiftModal')">取消</button>
+        <button class="btn btn-primary" onclick="addGift()">添加</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let members = [];
+    let gifts = [];
+    let currentMember = null;
+
+    async function loadMembers() {
+      const res = await fetch('/api/members');
+      members = await res.json();
+      const select = document.getElementById('redeemMemberId');
+      select.innerHTML = '<option value="">请选择会员</option>' +
+        members.map(m => `<option value="${m.id}">${m.name} (${m.phone})</option>`).join('');
+    }
+
+    async function loadGifts() {
+      const res = await fetch('/api/gifts');
+      gifts = await res.json();
+      renderGifts();
+    }
+
+    function onMemberChange() {
+      const id = document.getElementById('redeemMemberId').value;
+      currentMember = members.find(m => m.id == id) || null;
+      document.getElementById('currentPoints').textContent = currentMember ? currentMember.points + ' 分' : '-';
+      renderGifts();
+    }
+
+    function renderGifts() {
+      const grid = document.getElementById('giftGrid');
+      if (gifts.length === 0) {
+        grid.innerHTML = '<div class="empty" style="grid-column: 1/-1;">暂无礼品，点击右上角按钮添加</div>';
+        return;
+      }
+      const icons = ['🍎', '🍊', '🍇', '🍓', '🍌', '🍉', '🥝', '🍑'];
+      grid.innerHTML = gifts.map((g, i) => {
+        const canRedeem = currentMember && currentMember.points >= g.points_required && g.stock > 0;
+        const notEnoughPoints = currentMember && currentMember.points < g.points_required;
+        const outOfStock = g.stock <= 0;
+        return `
+          <div class="gift-card ${(!canRedeem && currentMember) ? 'disabled' : ''}">
+            <div class="gift-icon">${icons[i % icons.length]}</div>
+            <div class="gift-name">${g.name}</div>
+            <div class="gift-desc">${g.description || '-'}</div>
+            <div class="gift-points">
+              <span class="badge ${notEnoughPoints ? 'badge-danger' : 'badge-success'}">${g.points_required} 积分</span>
+            </div>
+            <div class="gift-stock">库存：${g.stock} 件</div>
+            ${outOfStock ?
+              '<button class="btn gift-btn" disabled style="background:#dcdfe6;color:#909399;cursor:not-allowed;">已兑完</button>' :
+              notEnoughPoints ?
+              `<button class="btn gift-btn" disabled style="background:#fef0f0;color:#f56c6c;cursor:not-allowed;">还差 ${g.points_required - currentMember.points} 分</button>` :
+              `<button class="btn btn-primary gift-btn" onclick="redeemGift(${g.id})">立即兑换</button>`
+            }
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function redeemGift(giftId) {
+      if (!currentMember) {
+        showToast('请先选择会员', 'error');
+        return;
+      }
+      const gift = gifts.find(g => g.id === giftId);
+      if (!confirm(`确定使用 ${gift.points_required} 积分兑换"${gift.name}"吗？`)) {
+        return;
+      }
+      const res = await fetch('/api/redemptions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ member_id: currentMember.id, gift_id: giftId })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast(`兑换成功！扣除 ${gift.points_required} 积分，剩余 ${data.current_points} 积分`, 'success');
+        currentMember.points = data.current_points;
+        document.getElementById('currentPoints').textContent = currentMember.points + ' 分';
+        const memberOpt = members.find(m => m.id === currentMember.id);
+        if (memberOpt) memberOpt.points = currentMember.points;
+        loadGifts();
+        loadRedemptions();
+      } else {
+        showToast(data.error || '兑换失败', 'error');
+      }
+    }
+
+    async function loadRedemptions() {
+      const res = await fetch('/api/redemptions');
+      const data = await res.json();
+      const tbody = document.getElementById('redeemTable');
+      if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty">暂无兑换记录</td></tr>';
+        return;
+      }
+      tbody.innerHTML = data.map(r => `
+        <tr>
+          <td>${r.id}</td>
+          <td>${r.member_name}</td>
+          <td>${r.member_phone}</td>
+          <td>${r.gift_name}</td>
+          <td><span class="badge badge-danger">-${r.points_deducted} 分</span></td>
+          <td>${new Date(r.created_at).toLocaleString('zh-CN')}</td>
+        </tr>
+      `).join('');
+    }
+
+    function openAddGift() {
+      document.getElementById('addGiftModal').classList.add('active');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('active');
+    }
+
+    async function addGift() {
+      const name = document.getElementById('giftName').value.trim();
+      const points_required = parseInt(document.getElementById('giftPoints').value);
+      const stock = parseInt(document.getElementById('giftStock').value) || 0;
+      const description = document.getElementById('giftDesc').value.trim();
+      if (!name || !points_required) {
+        showToast('请填写礼品名称和所需积分', 'error');
+        return;
+      }
+      const res = await fetch('/api/gifts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, points_required, description, stock })
+      });
+      if (res.ok) {
+        showToast('礼品添加成功', 'success');
+        closeModal('addGiftModal');
+        document.getElementById('giftName').value = '';
+        document.getElementById('giftPoints').value = '';
+        document.getElementById('giftStock').value = '';
+        document.getElementById('giftDesc').value = '';
+        loadGifts();
+      } else {
+        const data = await res.json();
+        showToast(data.error || '添加失败', 'error');
+      }
+    }
+
+    function showToast(msg, type = 'success') {
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.textContent = msg;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    loadMembers();
+    loadGifts();
+    loadRedemptions();
+  </script>
+</body>
+</html>
