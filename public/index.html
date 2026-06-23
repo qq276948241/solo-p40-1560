@@ -36,6 +36,11 @@
     .table tr:hover { background: #fafafa; }
     .badge { display: inline-block; padding: 4px 10px; border-radius: 10px; font-size: 12px; background: #ecf5ff; color: #409eff; }
     .badge-success { background: #f0f9eb; color: #67c23a; }
+    .level-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px; font-weight: 500; }
+    .level-normal { background: #f4f4f5; color: #909399; border: 1px solid #dcdfe6; }
+    .level-silver { background: linear-gradient(135deg, #f5f7fa, #c0c4cc); color: #606266; border: 1px solid #c0c4cc; }
+    .level-gold { background: linear-gradient(135deg, #fdf6ec, #e6a23c); color: #fff; border: 1px solid #e6a23c; }
+    .member-name { display: flex; align-items: center; }
     .empty { text-align: center; padding: 40px; color: #909399; font-size: 14px; }
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
     .modal-overlay.active { display: flex; }
@@ -155,7 +160,12 @@
       tbody.innerHTML = members.map(m => `
         <tr>
           <td>${m.id}</td>
-          <td>${m.name}</td>
+          <td>
+            <div class="member-name">
+              ${m.name}
+              <span class="level-badge level-${m.levelClass}">${m.level}</span>
+            </div>
+          </td>
           <td>${m.phone}</td>
           <td><span class="badge badge-success">${m.points} 分</span></td>
           <td>${new Date(m.created_at).toLocaleString('zh-CN')}</td>

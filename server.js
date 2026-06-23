@@ -60,6 +60,17 @@ if (initGifts.get().count === 0) {
   insertGift.run('VIP尊享卡', 2000, '全场9折优惠卡（永久）', 10);
 }
 
+function getMemberLevel(points) {
+  if (points >= 1200) return { level: '金卡', levelClass: 'gold' };
+  if (points >= 500) return { level: '银卡', levelClass: 'silver' };
+  return { level: '普通', levelClass: 'normal' };
+}
+
+function attachLevel(member) {
+  const levelInfo = getMemberLevel(member.points);
+  return { ...member, ...levelInfo };
+}
+
 app.get('/api/members', (req, res) => {
   const { keyword } = req.query;
   let members;
@@ -71,7 +82,7 @@ app.get('/api/members', (req, res) => {
   } else {
     members = db.prepare('SELECT * FROM members ORDER BY created_at DESC').all();
   }
-  res.json(members);
+  res.json(members.map(attachLevel));
 });
 
 app.get('/api/members/:id', (req, res) => {
@@ -79,7 +90,7 @@ app.get('/api/members/:id', (req, res) => {
   if (!member) {
     return res.status(404).json({ error: '会员不存在' });
   }
-  res.json(member);
+  res.json(attachLevel(member));
 });
 
 app.post('/api/members', (req, res) => {
@@ -91,7 +102,7 @@ app.post('/api/members', (req, res) => {
     const stmt = db.prepare('INSERT INTO members (phone, name) VALUES (?, ?)');
     const result = stmt.run(phone, name);
     const member = db.prepare('SELECT * FROM members WHERE id = ?').get(result.lastInsertRowid);
-    res.status(201).json(member);
+    res.status(201).json(attachLevel(member));
   } catch (err) {
     if (err.message.includes('UNIQUE')) {
       return res.status(400).json({ error: '该手机号已注册' });
@@ -110,7 +121,7 @@ app.put('/api/members/:id', (req, res) => {
     const stmt = db.prepare('UPDATE members SET phone = ?, name = ? WHERE id = ?');
     stmt.run(phone || member.phone, name || member.name, req.params.id);
     const updated = db.prepare('SELECT * FROM members WHERE id = ?').get(req.params.id);
-    res.json(updated);
+    res.json(attachLevel(updated));
   } catch (err) {
     if (err.message.includes('UNIQUE')) {
       return res.status(400).json({ error: '该手机号已被其他会员使用' });
