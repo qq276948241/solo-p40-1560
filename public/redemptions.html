@@ -154,8 +154,14 @@
       const res = await fetch('/api/members');
       members = await res.json();
       const select = document.getElementById('redeemMemberId');
+      const selectedId = select.value;
       select.innerHTML = '<option value="">请选择会员</option>' +
         members.map(m => `<option value="${m.id}">${m.name} (${m.phone})</option>`).join('');
+      if (selectedId) {
+        select.value = selectedId;
+        currentMember = members.find(m => m.id == selectedId) || null;
+        document.getElementById('currentPoints').textContent = currentMember ? currentMember.points + ' 分' : '-';
+      }
     }
 
     async function loadGifts() {
@@ -219,11 +225,8 @@
       const data = await res.json();
       if (res.ok) {
         showToast(`兑换成功！扣除 ${gift.points_required} 积分，剩余 ${data.current_points} 积分`, 'success');
-        currentMember.points = data.current_points;
-        document.getElementById('currentPoints').textContent = currentMember.points + ' 分';
-        const memberOpt = members.find(m => m.id === currentMember.id);
-        if (memberOpt) memberOpt.points = currentMember.points;
-        loadGifts();
+        await loadMembers();
+        renderGifts();
         loadRedemptions();
       } else {
         showToast(data.error || '兑换失败', 'error');
